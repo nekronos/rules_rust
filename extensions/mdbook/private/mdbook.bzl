@@ -39,13 +39,16 @@ def _mdbook_impl(ctx):
     args.add("build")
     args.add("${{pwd}}/{}".format(ctx.file.book.dirname))
 
+    env = {"MDBOOK_PLUGIN_PATH": plugin_path}
+    env.update((ctx.attr.env or {}))
+
     ctx.actions.run(
         mnemonic = "MdBookBuild",
         executable = ctx.executable._process_wrapper,
         tools = depset(ctx.files.plugins, transitive = [toolchain.all_files]),
         outputs = [output],
         arguments = [inputs_map_args, args],
-        env = {"MDBOOK_PLUGIN_PATH": plugin_path},
+        env = env,
         inputs = inputs,
         toolchain = "@rules_rust_mdbook//:toolchain_type",
     )
@@ -70,6 +73,7 @@ mdbook = rule(
             allow_single_file = ["book.toml"],
             mandatory = True,
         ),
+        "env": attr.string_dict(),
         "plugins": attr.label_list(
             doc = (
                 "Executables to inject into `PATH` for use in " +
